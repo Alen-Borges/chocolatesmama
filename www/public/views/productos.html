@@ -1,0 +1,108 @@
+<div class="view-header-tabs">
+    <button class="tab-btn active" id="tab-simples" onclick="switchProductTab('simples')">Simples</button>
+    <button class="tab-btn" id="tab-cajas" onclick="switchProductTab('cajas')">Cajas</button>
+</div>
+
+<div id="products-list-container" class="products-list">
+    <!-- Items go here -->
+</div>
+
+<!-- Botones de Acción Flotantes en la esquina inferior derecha -->
+<div class="fab-group">
+    <div class="fab-wrapper">
+        <span class="fab-label">Nueva Caja</span>
+        <button class="fab-btn fab-box" onclick="window.location.hash = 'nueva-caja'">📦</button>
+    </div>
+    <div class="fab-wrapper">
+        <span class="fab-label">Nuevo Chocolate</span>
+        <button class="fab-btn fab-product" onclick="window.location.hash = 'nuevo-producto'">🍫</button>
+    </div>
+</div>
+
+<style>
+    .view-header-tabs {
+        display: flex;
+        background: #f0f0f0;
+        border-radius: 14px;
+        padding: 5px;
+        margin-bottom: 24px;
+    }
+    .tab-btn {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        background: none;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 600;
+        border-radius: 10px;
+        color: var(--text-muted);
+        transition: all 0.2s;
+    }
+    .tab-btn.active {
+        background: white;
+        color: var(--primary);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    /* Grupo de Botones Flotantes (FAB) */
+    .fab-group {
+        position: fixed !important;
+        bottom: 100px !important;
+        right: 25px !important;
+        display: flex !important;
+        flex-direction: column-reverse !important; /* Invertir para que el (+) esté abajo */
+        align-items: flex-end !important;
+        gap: 16px !important;
+        z-index: 9999 !important;
+        pointer-events: auto !important;
+    }
+
+    .fab-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .fab-label {
+        background: var(--primary);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        opacity: 0; /* Oculto por defecto, se muestra al interactuar o dejar fijo */
+        transform: translateX(10px);
+        transition: all 0.3s ease;
+        pointer-events: none;
+    }
+
+    /* Mostrar etiquetas siempre para claridad en esta fase */
+    .fab-label { opacity: 1; transform: translateX(0); }
+
+    .fab-btn {
+        width: 56px;
+        height: 56px;
+        border-radius: 28px;
+        border: none;
+        font-size: 24px;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 20px rgba(93, 64, 55, 0.3);
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .fab-btn:active { transform: scale(0.85); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    
+    .fab-product { background: var(--primary); }
+    .fab-box { background: var(--secondary); background-image: linear-gradient(135deg, var(--secondary), #bc8a5f); }
+
+    .products-list {
+        display: grid;
+        gap: 16px;
+        padding-bottom: 20px;
+    }
+</style>

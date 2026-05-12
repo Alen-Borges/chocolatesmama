@@ -1,0 +1,6 @@
+1hacer funcional el historial, dar la posibilidad de que los pedidos puedan darse como entregados (RESUELTO)
+2contemplar cancelacion de pedido (RESUELTO)
+3ajustar el campo forma de las cajas, hay que eliminarlo y unificarlo con el de empaque (RESUELTO)
+4sumar costo de envio en 20 30 40 y sumarlo al total del pedido (RESUELTO)
+5numero de telefono no es boligatorio (RESUELTO)
+6agregar una seccion donde se pueda indicar de que plataforma viene el usuario que compra (dar opciones whatsapp o facebook), este campo no debe ser obligatorio (RESUELTO)

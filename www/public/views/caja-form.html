@@ -1,0 +1,64 @@
+<div class="form-view animate-in">
+    <div class="form-group">
+        <label>Nombre de la Caja *</label>
+        <input type="text" id="c-nombre" placeholder="Ej: Especial San Valentín" required>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label>Empaque / Forma *</label>
+            <input type="text" id="c-empaque" placeholder="Caja cartón, Madera, Corazón...">
+        </div>
+    </div>
+
+    <div class="card selector-card">
+        <label>Contenido de la Caja (Selecciona los chocolates)</label>
+        <div id="box-items-selector" class="items-selector-list">
+            <p style="color: var(--text-muted); font-size: 13px;">Cargando productos...</p>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label>Precio Empaque</label>
+            <input type="number" id="c-precio-empaque" step="0.01" value="0">
+        </div>
+        <div class="form-group">
+            <label>Precio Final Caja *</label>
+            <input type="number" id="c-precio-total" step="0.01" placeholder="0.00">
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button class="btn btn-secondary" onclick="window.location.hash = 'productos'">Cancelar</button>
+        <button class="btn btn-primary" id="btn-save-box">Crear Caja</button>
+    </div>
+</div>
+
+<style>
+    .selector-card {
+        background: #fdfaf5;
+        border: 1px dashed var(--secondary);
+        margin: 20px 0;
+    }
+    .items-selector-list {
+        max-height: 250px;
+        overflow-y: auto;
+        margin-top: 10px;
+    }
+    .selector-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0efe9;
+    }
+    .selector-item label { margin-bottom: 0; font-weight: 400; flex: 1; }
+    .qty-input {
+        width: 60px;
+        padding: 6px;
+        text-align: center;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+</style>

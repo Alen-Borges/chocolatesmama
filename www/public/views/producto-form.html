@@ -1,0 +1,48 @@
+<div class="form-view animate-in">
+    <div class="form-group">
+        <label for="p-nombre">Nombre del Producto *</label>
+        <input type="text" id="p-nombre" placeholder="Ej: Bombón Suizo" required>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="p-tipo">Tipo de Chocolate *</label>
+            <select id="p-tipo">
+                <option value="Negro">Negro</option>
+                <option value="Blanco">Blanco</option>
+                <option value="Con Leche">Con Leche</option>
+                <option value="Ruby">Ruby</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="p-forma">Forma *</label>
+            <input type="text" id="p-forma" placeholder="Bombón, Tableta...">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="p-relleno">Relleno</label>
+        <input type="text" id="p-relleno" placeholder="Dulce de leche, menta...">
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="p-precio">Precio Unitario *</label>
+            <input type="number" id="p-precio" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group">
+            <label for="p-peso">Peso (g)</label>
+            <input type="number" id="p-peso" placeholder="0">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="p-extra">Observaciones</label>
+        <textarea id="p-extra" rows="3"></textarea>
+    </div>
+
+    <div class="form-actions">
+        <button class="btn btn-secondary" onclick="window.location.hash = 'productos'">Cancelar</button>
+        <button class="btn btn-primary" id="btn-save-product">Guardar Chocolate</button>
+    </div>
+</div>

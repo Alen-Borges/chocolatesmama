@@ -1,0 +1,53 @@
+/* Updated Orders styles for buttons and tags */
+.order-main-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.order-amount-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.price-total {
+    font-weight: 800;
+    font-size: 19px;
+    color: var(--primary);
+}
+
+.plataforma-tag {
+    font-size: 11px;
+    color: var(--secondary);
+    font-weight: 700;
+}
+
+.order-actions-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 12px;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+    flex: 1;
+}
+
+.btn-success {
+    background: #4caf50;
+    color: white;
+}
+
+.btn-danger {
+    background: white;
+    color: #e53935;
+    border: 1px solid #e53935;
+}
+
+.badge-cancelado {
+    background: #ffebee;
+    color: #c62828;
+}

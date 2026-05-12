@@ -1,0 +1,36 @@
+<div class="detail-view animate-in">
+    <div id="detalle-header" class="card detail-header">
+        <!-- Info del cliente -->
+    </div>
+
+    <div class="items-section">
+        <label class="section-subtitle">CONTENIDO DEL PEDIDO</label>
+        <div id="detalle-items-list" class="pedido-items-list">
+            <!-- Items del pedido -->
+        </div>
+    </div>
+
+    <div id="detalle-total-card" class="total-bar">
+        <!-- Total -->
+    </div>
+
+    <div class="form-actions" style="margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="window.history.back()">Volver</button>
+    </div>
+</div>
+
+<style>
+    .detail-header { padding: 20px; border-radius: 16px; margin-bottom: 20px; }
+    .detail-header h3 { margin: 0 0 5px 0; color: var(--primary); }
+    .detail-header p { margin: 2px 0; font-size: 14px; color: var(--text-muted); }
+    
+    .detail-info-row { display: flex; justify-content: space-between; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+    .info-item label { font-size: 10px; font-weight: 800; display: block; color: var(--secondary); }
+    .info-item span { font-weight: 600; font-size: 14px; }
+
+    .total-bar {
+        display: flex; justify-content: space-between; align-items: center;
+        background: var(--primary); color: white; padding: 15px 20px;
+        border-radius: 14px; font-weight: 700;
+    }
+</style>

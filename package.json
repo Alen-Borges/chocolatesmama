@@ -1,0 +1,22 @@
+{
+  "name": "chocolates-app",
+  "version": "1.0.0",
+  "description": "App para gestión de chocolatería artesanal",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "sync": "npm run build && npx cap sync",
+    "run:android": "npm run build && npx cap run android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor-community/sqlite": "^6.0.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
