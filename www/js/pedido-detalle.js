@@ -10,61 +10,64 @@ document.addEventListener('viewLoaded', (e) => {
 async function renderDetallePedido(id) {
     const header = document.getElementById('detalle-header');
     const itemsList = document.getElementById('detalle-items-list');
-    const totalCard = document.getElementById('detalle-total-card');
+    const summaryContent = document.getElementById('summary-content');
+    const totalBar = document.getElementById('detalle-total-bar');
 
     try {
         const data = await db.obtenerDetallePedido(id);
         
-        // Header
+        // Cabecera del Cliente
         header.innerHTML = `
             <h3>${data.destinatario}</h3>
-            <p>📱 ${data.telefono || 'Sin teléfono'}</p>
-            <p>📅 Entrega: ${data.fecha_entrega}</p>
-            ${data.plataforma ? `<p>🌐 Plataforma: ${data.plataforma}</p>` : ''}
-            ${data.con_envio ? `<p>🏠 Envío a: ${data.direccion}</p>` : ''}
+            <p><span>📞</span> ${data.telefono || 'Sin teléfono'}</p>
+            <p><span>🚚</span> ${data.con_envio ? data.direccion : 'Retiro por local'}</p>
+            <p><span>📅</span> Entrega: <strong>${data.fecha_entrega}</strong></p>
             
-            <div class="detail-info-row">
-                <div class="info-item">
-                    <label>ESTADO</label>
-                    <span class="order-status badge-${data.estado}">${data.estado}</span>
-                </div>
-                <div class="info-item" style="text-align: right;">
-                    <label>CREADO EL</label>
-                    <span>${new Date(data.created_at).toLocaleDateString()}</span>
-                </div>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <span class="order-status badge-${data.estado}" style="text-transform: uppercase; font-size: 10px; padding: 4px 10px;">${data.estado}</span>
+                <span style="font-size: 11px; color: #999;">ID #${data.id}</span>
             </div>
         `;
 
-        // Items
-        let subtotalItems = 0;
+        // Lista de Items
+        let subtotal = 0;
         itemsList.innerHTML = data.items.map(item => {
             const rowTotal = item.cantidad * item.precio_unitario;
-            subtotalItems += rowTotal;
+            subtotal += rowTotal;
             return `
-                <div class="item-selected-row">
-                    <span class="qty-badge">${item.cantidad}</span>
-                    <div class="item-name-col">
+                <div class="item-selected-row animate-in">
+                    <div class="qty-bubble">${item.cantidad}</div>
+                    <div class="item-info-col">
                         <h5>${item.nombre_item}</h5>
-                        <span>${item.tipo_item === 'caja' ? '📦 Caja' : '🍫 Simple'}</span>
+                        <span>${item.tipo_item === 'caja' ? '📦 Caja de chocolates' : '🍫 Chocolate simple'}</span>
                     </div>
-                    <div class="item-price-col">$${rowTotal.toFixed(2)}</div>
+                    <div class="item-total-col">$${rowTotal.toFixed(2)}</div>
                 </div>
             `;
         }).join('');
 
-        // Total
-        const totalFinal = subtotalItems + (data.costo_envio || 0);
-        totalCard.innerHTML = `
-            <div>
-                <div style="font-size: 11px; opacity: 0.8;">ITEMS: $${subtotalItems.toFixed(2)}</div>
-                ${data.con_envio ? `<div style="font-size: 11px; opacity: 0.8;">ENVÍO: $${data.costo_envio.toFixed(2)}</div>` : ''}
-                <div style="font-size: 18px;">TOTAL</div>
+        // Resumen y Total
+        summaryContent.innerHTML = `
+            <div class="summary-line">
+                <span>Subtotal productos</span>
+                <span>$${subtotal.toFixed(2)}</span>
             </div>
-            <div style="font-size: 24px;">$${totalFinal.toFixed(2)}</div>
+            ${data.con_envio ? `
+                <div class="summary-line">
+                    <span>Costo de envío</span>
+                    <span>$${(data.costo_envio || 0).toFixed(2)}</span>
+                </div>
+            ` : ''}
+        `;
+
+        const totalFinal = subtotal + (data.costo_envio || 0);
+        totalBar.innerHTML = `
+            <span class="total-label">Importe Total</span>
+            <span class="total-value">$${totalFinal.toFixed(2)}</span>
         `;
 
     } catch (err) {
         console.error(err);
-        header.innerHTML = '<p class="error">Error al cargar detalle.</p>';
+        header.innerHTML = '<p class="error">Error al cargar el detalle del pedido.</p>';
     }
 }

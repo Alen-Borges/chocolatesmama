@@ -116,19 +116,70 @@ body {
 }
 
 /* Forms */
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    margin-left: 4px;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="tel"],
+input[type="date"],
+select,
+textarea {
+    width: 100%;
+    padding: 16px;
+    font-size: 16px;
+    border: 2px solid #f0efe9;
+    border-radius: 14px;
+    background: #fff;
+    color: var(--text);
+    font-family: inherit;
+    transition: all 0.3s;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--secondary);
+    box-shadow: 0 0 0 4px rgba(212, 163, 115, 0.1);
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
 .btn {
-    padding: 12px 24px;
-    border-radius: 12px;
+    padding: 16px 24px;
+    border-radius: 16px;
     border: none;
     font-family: inherit;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 16px;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .btn-primary {
     background: var(--primary);
     color: white;
+    box-shadow: 0 4px 12px rgba(93, 64, 55, 0.2);
 }
 
 .btn-fab {
@@ -233,3 +284,22 @@ body {
 .btn-delete-large:active {
     background: #ffcdd2;
 }
+
+/* Footer Actions for Forms */
+.form-actions-fixed {
+    display: flex;
+    gap: 12px;
+    margin-top: 30px;
+    padding-bottom: 20px;
+}
+
+.form-actions-fixed .btn {
+    flex: 1;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid #ddd;
+    color: var(--text-muted);
+}
+

@@ -1,7 +1,9 @@
 <div class="orders-view">
-    <div class="view-header-tabs">
-        <button class="tab-btn active" onclick="switchOrderTab('pendientes')">Pendientes</button>
-        <button class="tab-btn" onclick="switchOrderTab('historial')">Historial</button>
+    <div class="orders-nav-header">
+        <h2 id="orders-subtitle">Pedidos Pendientes</h2>
+        <button id="btn-toggle-history" class="btn-icon-circular" onclick="toggleHistoryView()" title="Ver Historial">
+            <span id="history-icon">🕒</span>
+        </button>
     </div>
     
     <div id="orders-list-container">
@@ -10,3 +12,41 @@
 
     <button class="btn btn-primary btn-fab" onclick="window.location.hash = 'nuevo-pedido'">+</button>
 </div>
+
+<style>
+    .orders-nav-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f0efe9;
+    }
+    .orders-nav-header h2 {
+        font-size: 18px;
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+    .btn-icon-circular {
+        width: 44px;
+        height: 44px;
+        border-radius: 22px;
+        border: none;
+        background: #f0efe9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-icon-circular:active {
+        transform: scale(0.9);
+        background: var(--secondary);
+        color: white;
+    }
+    .btn-icon-circular.active {
+        background: var(--primary);
+        color: white;
+    }
+</style>

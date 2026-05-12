@@ -8,8 +8,24 @@ document.addEventListener('viewLoaded', (e) => {
     }
 });
 
-window.switchOrderTab = (tab) => {
-    orderTab = tab;
+window.toggleHistoryView = () => {
+    orderTab = (orderTab === 'pendientes') ? 'historial' : 'pendientes';
+    
+    // UI Updates for the toggle button and title
+    const subtitle = document.getElementById('orders-subtitle');
+    const iconSpan = document.getElementById('history-icon');
+    const btn = document.getElementById('btn-toggle-history');
+
+    if (orderTab === 'historial') {
+        subtitle.innerText = 'Historial';
+        iconSpan.innerText = '⬅️'; // Icono de volver
+        btn.classList.add('active');
+    } else {
+        subtitle.innerText = 'Pedidos Pendientes';
+        iconSpan.innerText = '🕒'; // Icono de historial
+        btn.classList.remove('active');
+    }
+
     renderOrders();
 };
 
@@ -34,13 +50,6 @@ window.cancelarPedidoUI = async (id) => {
 async function renderOrders() {
     const container = document.getElementById('orders-list-container');
     if (!container) return;
-
-    // Actualizar tabs visualmente
-    document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
-        const isPendientes = (idx === 0 && orderTab === 'pendientes');
-        const isHistorial = (idx === 1 && orderTab === 'historial');
-        btn.classList.toggle('active', isPendientes || isHistorial);
-    });
 
     container.innerHTML = '<div class="loader"><div class="spinner"></div></div>';
 
