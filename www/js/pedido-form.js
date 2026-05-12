@@ -78,45 +78,44 @@ function renderModalList(filter = '') {
     }
 
     list.innerHTML = filtered.map((item) => {
-        // Encontramos el index original para addItem
-        const originalIdx = availableItems.indexOf(item);
+        const idx = availableItems.indexOf(item);
         return `
-            <button class="modal-item-card" id="modal-item-${originalIdx}">
-                <div class="item-info">
+            <div class="modal-item-row animate-in">
+                <div class="item-main-info">
                     <strong>${item.nombre}</strong><br>
-                    <small>${item.type === 'caja' ? '📦 Caja' : '🍫 Simple'}</small>
+                    <small>$${item.price.toFixed(2)} - ${item.type === 'caja' ? '📦 Caja' : '🍫 Simple'}</small>
                 </div>
-                <strong>$${item.price.toFixed(2)}</strong>
-            </button>
+                <div class="qty-actions">
+                    <input type="number" id="modal-qty-${idx}" value="1" min="1" class="qty-field">
+                    <button class="btn-add-mini" onclick="addItemFromModal(${idx})">Añadir</button>
+                </div>
+            </div>
         `;
     }).join('');
-
-    // Agregar listeners a los botones generados
-    filtered.forEach(item => {
-        const idx = availableItems.indexOf(item);
-        document.getElementById(`modal-item-${idx}`).onclick = () => addItemToPedido(idx);
-    });
 }
 
-function addItemToPedido(idx) {
+window.addItemFromModal = (idx) => {
+    const qtyInput = document.getElementById(`modal-qty-${idx}`);
+    const cantidad = parseInt(qtyInput.value) || 1;
+    
     const baseItem = availableItems[idx];
     const existing = selectedItems.find(i => i.id === baseItem.id && i.type === baseItem.type);
 
     if (existing) {
-        existing.cantidad++;
+        existing.cantidad += cantidad;
     } else {
         selectedItems.push({
             id: baseItem.id,
             nombre: baseItem.nombre,
             type: baseItem.type,
             precio_unitario: baseItem.price,
-            cantidad: 1
+            cantidad: cantidad
         });
     }
 
     renderSelectedItems();
     closeItemModal();
-}
+};
 
 function renderSelectedItems() {
     const list = document.getElementById('pedido-items-list');
@@ -148,21 +147,18 @@ function renderSelectedItems() {
                     <span>${item.type === 'caja' ? 'Caja mixta' : 'Chocolate simple'}</span>
                 </div>
                 <div class="item-price-col">$${subtotal.toFixed(2)}</div>
-                <button class="btn-remove" id="remove-item-${idx}">🗑️</button>
+                <button class="btn-remove" onclick="removeSelectedItem(${idx})">🗑️</button>
             </div>
         `;
     }).join('');
 
-    // Listeners para botones de remover
-    selectedItems.forEach((_, idx) => {
-        document.getElementById(`remove-item-${idx}`).onclick = () => {
-            selectedItems.splice(idx, 1);
-            renderSelectedItems();
-        };
-    });
-
     totalEl.innerText = `$ ${total.toFixed(2)}`;
 }
+
+window.removeSelectedItem = (idx) => {
+    selectedItems.splice(idx, 1);
+    renderSelectedItems();
+};
 
 async function savePedido() {
     const data = {

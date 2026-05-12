@@ -133,9 +133,32 @@
     .modal-body { padding: 20px; flex: 1; overflow-y: auto; }
     .modern-input { width: 100%; padding: 12px; border-radius: 10px; border: 1.5px solid #eee; margin-bottom: 15px; }
 
-    .modal-item-card {
-        padding: 15px; border: 1px solid #f0f0f0; border-radius: 12px; margin-bottom: 10px;
-        display: flex; justify-content: space-between; align-items: center; width: 100%;
-        background: #fdfaf5; cursor: pointer; border: none; font-family: inherit;
+    .modal-item-row {
+        padding: 12px;
+        background: #fdfaf5;
+        border-radius: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .item-main-info { flex: 1; }
+    .qty-actions { display: flex; gap: 8px; align-items: center; }
+    .qty-field {
+        width: 50px;
+        height: 38px;
+        text-align: center;
+        border: 1.5px solid #eee;
+        border-radius: 8px;
+        font-weight: 700;
+    }
+    .btn-add-mini {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
     }
 </style>

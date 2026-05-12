@@ -13,6 +13,15 @@ window.switchProductTab = (tab) => {
     document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
         btn.classList.toggle('active', (idx === 0 && tab === 'simples') || (idx === 1 && tab === 'cajas'));
     });
+
+    // Toggle FABs
+    const fabProduct = document.getElementById('fab-product');
+    const fabBox = document.getElementById('fab-box');
+    if (fabProduct && fabBox) {
+        fabProduct.classList.toggle('hidden-force', tab !== 'simples');
+        fabBox.classList.toggle('hidden-force', tab !== 'cajas');
+    }
+
     renderProducts();
 };
 
