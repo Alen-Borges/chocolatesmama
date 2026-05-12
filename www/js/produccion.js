@@ -25,20 +25,25 @@ async function renderProduction() {
         }
 
         container.innerHTML = items.map(item => `
-            <div class="card production-card" onclick="openProductionDialog(${item.producto_id}, '${item.nombre}', ${item.faltante})">
+            <div class="card production-card" onclick="openProductionDialog(${item.producto_id}, '${item.nombre}', ${item.deuda})">
                 <div class="prod-header">
                     <span class="prod-name">${item.nombre}</span>
-                    <span class="prod-badge">${item.faltante} unidades</span>
+                    <span class="prod-stock-badge ${item.stock_actual > 0 ? 'has-stock' : ''}">Stock: ${item.stock_actual}</span>
                 </div>
                 <div class="prod-details">
-                    <div class="detail-bar">
-                        <div class="progress" style="width: ${(item.ya_producido / item.total_pedido) * 100}%"></div>
+                    <div class="debt-info ${item.deuda > 0 ? 'has-debt' : ''}">
+                        <label>DEUDA PENDIENTE</label>
+                        <span class="debt-value">${item.deuda}</span>
                     </div>
-                    <div class="detail-text">
-                        <span>Pedido: ${item.total_pedido}</span>
-                        <span>Hecho: ${item.ya_producido}</span>
+                    <div class="demand-info">
+                        <label>DEMANDA TOTAL</label>
+                        <span>${item.demanda_pendiente}</span>
                     </div>
                 </div>
+                
+                ${item.deuda > 0 ? `
+                    <div class="prod-alert">⚠️ Faltan ${item.deuda} para cubrir pedidos</div>
+                ` : ''}
             </div>
         `).join('');
 

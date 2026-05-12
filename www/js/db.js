@@ -207,7 +207,23 @@ export async function crearPedido(pedido, items) {
 }
 
 export async function marcarComoEntregado(id) {
-    await ensureDbReady();
+    // 1. Obtener los ítems del pedido para saber qué descontar del stock
+    const pedido = await obtenerDetallePedido(id);
+    
+    // 2. Registrar la "salida" de stock
+    for (const item of pedido.items) {
+        if (item.tipo_item === 'producto') {
+            await registrarProduccion(item.producto_id, -item.cantidad, `Entrega Pedido #${id}`);
+        } else if (item.tipo_item === 'caja') {
+            // Si es caja, hay que descontar sus componentes
+            const componentes = await obtenerContenidoCaja(item.caja_id);
+            for (const comp of componentes) {
+                await registrarProduccion(comp.producto_id, -(comp.cantidad * item.cantidad), `Entrega Pedido #${id} (Caja)`);
+            }
+        }
+    }
+
+    // 3. Cambiar estado
     return await db.run("UPDATE pedidos SET estado = 'entregado' WHERE id = ?", [id]);
 }
 
@@ -219,18 +235,25 @@ export async function cancelarPedido(id) {
 export async function obtenerConsolidadoProduccion() {
     await ensureDbReady();
     const sql = `
-    SELECT p.id as producto_id, p.nombre,
+    SELECT 
+        p.id as producto_id, 
+        p.nombre,
+        -- Stock Actual (Total producido - Total entregado)
+        COALESCE((SELECT SUM(rp.cantidad) FROM registros_produccion rp WHERE rp.producto_id = p.id), 0) as stock_actual,
+        -- Demanda Pendiente (Suma de lo necesario para los pedidos actuales)
         (
             COALESCE((SELECT SUM(pi.cantidad) FROM pedido_items pi JOIN pedidos ped ON pi.pedido_id = ped.id WHERE pi.tipo_item = 'producto' AND pi.producto_id = p.id AND ped.estado = 'pendiente'), 0)
             +
             COALESCE((SELECT SUM(pi.cantidad * cp.cantidad) FROM pedido_items pi JOIN pedidos ped ON pi.pedido_id = ped.id JOIN caja_productos cp ON pi.caja_id = cp.caja_id WHERE pi.tipo_item = 'caja' AND cp.producto_id = p.id AND ped.estado = 'pendiente'), 0)
-        ) as total_pedido,
-        COALESCE((SELECT SUM(rp.cantidad) FROM registros_produccion rp WHERE rp.producto_id = p.id), 0) as ya_producido
+        ) as demanda_pendiente
     FROM productos p`;
+    
     const res = await db.query(sql);
-    return (res.values || [])
-        .map(v => ({ ...v, faltante: v.total_pedido - v.ya_producido }))
-        .filter(v => v.faltante > 0);
+    return (res.values || []).map(v => ({
+        ...v,
+        // La deuda es la demanda que el stock NO puede cubrir
+        deuda: Math.max(0, v.demanda_pendiente - v.stock_actual)
+    }));
 }
 
 export async function registrarProduccion(productoId, cantidad, notas = '') {
