@@ -182,7 +182,12 @@ export async function obtenerPedidosPendientes() {
 
 export async function obtenerHistorialPedidos() {
     await ensureDbReady();
-    const sql = `SELECT p.*, COALESCE((SELECT SUM(pi.cantidad * pi.precio_unitario) FROM pedido_items pi WHERE pi.pedido_id = p.id), 0) + p.costo_envio as total_acumulado FROM pedidos p WHERE p.estado IN ('entregado', 'cancelado') ORDER BY p.fecha_entrega DESC`;
+    const sql = `
+        SELECT p.*, 
+        COALESCE((SELECT SUM(pi.cantidad * pi.precio_unitario) FROM pedido_items pi WHERE pi.pedido_id = p.id), 0) + p.costo_envio as total_acumulado 
+        FROM pedidos p 
+        WHERE p.estado IN ('entregado', 'cancelado') 
+        ORDER BY p.created_at DESC`;
     const res = await db.query(sql);
     return res.values || [];
 }
@@ -197,12 +202,26 @@ export async function obtenerDetallePedido(id) {
 
 export async function crearPedido(pedido, items) {
     await ensureDbReady();
-    const res = await db.run(`INSERT INTO pedidos (destinatario, telefono, direccion, fecha_entrega, con_envio, costo_envio, plataforma, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
-                            [pedido.destinatario, pedido.telefono, pedido.direccion, pedido.fecha_entrega, pedido.con_envio, pedido.costo_envio, pedido.plataforma, pedido.notas]);
+    const sqlP = `INSERT INTO pedidos (destinatario, telefono, direccion, fecha_entrega, con_envio, costo_envio, plataforma, notas) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const paramsP = [pedido.destinatario, pedido.telefono, pedido.direccion, pedido.fecha_entrega, pedido.con_envio, pedido.costo_envio, pedido.plataforma, pedido.notas];
+    const res = await db.run(sqlP, paramsP);
     const newId = res.changes.lastId;
+    
     for (const item of items) {
         await db.run(`INSERT INTO pedido_items (pedido_id, tipo_item, producto_id, caja_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?, ?, ?)`, [newId, item.tipo_item, item.producto_id || null, item.caja_id || null, item.cantidad, item.precio_unitario]);
     }
+
+    // Lógica de los 20 pedidos: Borrar el más antiguo si superamos el límite
+    // Nota: El trigger ON DELETE CASCADE en el esquema asegura que se borren sus items
+    await db.run(`
+        DELETE FROM pedidos 
+        WHERE id NOT IN (
+            SELECT id FROM pedidos 
+            ORDER BY created_at DESC 
+            LIMIT 20
+        )
+    `);
+
     return newId;
 }
 

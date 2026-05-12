@@ -45,16 +45,7 @@ async function renderOrders() {
         if (orderTab === 'pendientes') {
             orders = await db.obtenerPedidosPendientes();
         } else {
-            // Incluir entregados y cancelados en historial
-            const res = await db.obtenerHistorialPedidos();
-            const resCancel = (await (async () => {
-                const r = await window.CapacitorSQLite.query({ 
-                    database: 'chocolates_db', 
-                    statement: "SELECT * FROM pedidos WHERE estado = 'cancelado' ORDER BY fecha_entrega DESC" 
-                });
-                return r.values || [];
-            })());
-            orders = [...res, ...resCancel];
+            orders = await db.obtenerHistorialPedidos();
         }
 
         if (orders.length === 0) {
