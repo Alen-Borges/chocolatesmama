@@ -1,71 +1,61 @@
-# AGENTS.md — Prueba Técnica Frontend (Angular)
+# AGENTS.md — App de Chocolates (Capacitor + Vanilla JS)
 
-This file defines general guidance for all AI agents working in this repository, following the **ASDD (Agent Spec Software Development)** workflow.
+This file defines general guidance for all AI agents working in this repository, following the **ASDD (Agent Spec Software Development)** workflow adapted for a mobile-first vanilla application.
 
 ## Project Summary
 
-- **Frontend**: Angular 14+ (standalone o módulos)
-- **Lenguaje**: TypeScript 4.8+
-- **Backend local**: Node.js API en `http://localhost:3002` (ya proporcionado)
-- **Estilos**: Vanilla CSS / SCSS — **sin frameworks** (no Bootstrap, no Material, no Tailwind)
-- **Testing**: Jest (preferido) con coverage ≥ 70%
-- **Architecture**: Servicios → Componentes → Rutas (Angular Router)
+- **Target**: Android (Capacitor v6)
+- **UI**: HTML5 + CSS3 + JavaScript Vanilla (Pure JS, no frameworks like React/Angular/Vue).
+- **Database**: SQLite via `@capacitor-community/sqlite` (Native storage).
+- **Navigation**: SPA architecture. One `index.html`, views loaded from `www/views/` via `fetch()` and injected into `innerHTML`.
+- **Logic**: Vanilla JS, one file per module/screen in `www/js/`.
+- **Database Logic**: **CRITICAL** - All SQL queries MUST live in `www/js/db.js`. Nowhere else.
+- **Tools**: Node.js + npm + Android SDK (via Android Studio).
 
 ## Seniority Target: Senior
 
-Funcionalidades requeridas: **F1, F2, F3, F4, F5, F6** + rendimiento + Skeletons + Responsive.
+Focused on performance, native-like feel, robust offline storage (SQLite), and clean vanilla JS architecture.
 
 ## ASDD Workflow
 
 **Every new feature must follow this pipeline:**
 
 ```
-[FASE 1 — Secuencial]
-spec-generator     → /generate-spec      → .github/specs/<feature>.spec.md
+[FASE 1 — Spec]
+spec-generator     → Generar spec técnica en .github/specs/<feature>.spec.md
 
-[FASE 2 — Solo Frontend]
-frontend-developer → Angular components / services / pipes / routing
+[FASE 2 — Base de Datos]
+database-agent     → Definir/Actualizar esquema y queries en www/js/db.js
 
-[FASE 3 — Tests]
-test-engineer-frontend → src/app/**/*.spec.ts (Jest)
+[FASE 3 — Frontend]
+frontend-developer → Implementar HTML views, logic en js/ y estilos en css/
 
-[FASE 4 — Secuencial]
-qa-agent           → Gherkin, riesgos, validación visual
+[FASE 4 — Sincronización]
+orchestrator       → Ejecutar "npx cap sync" y "npx cap run android" para validar
+
+[FASE 5 — QA & Tests]
+qa-agent           → Validar flujos de usuario, persistencia SQLite y UI responsive.
 ```
 
-## API Backend (local — no modificar)
+## Database Schema (Source of Truth)
 
-| Method | URL | Descripción |
-|--------|-----|-------------|
-| GET | `/bp/products` | Lista todos los productos |
-| POST | `/bp/products` | Crea un producto |
-| PUT | `/bp/products/:id` | Actualiza un producto |
-| DELETE | `/bp/products/:id` | Elimina un producto |
-| GET | `/bp/products/verification/:id` | Verifica si un id ya existe |
-
-Base URL: `http://localhost:3002`
-
-## Modelo Producto Financiero
-
-```typescript
-interface Product {
-  id: string;          // 3-10 chars, único
-  name: string;        // 5-100 chars
-  description: string; // 10-200 chars
-  logo: string;        // URL
-  date_release: string; // ISO date — >= hoy
-  date_revision: string; // exactamente 1 año después de date_release
-}
-```
+Refer to the main SQLite schema defined in the project documentation for table details:
+- `productos`: chocolate metadata and pricing.
+- `cajas`: boxes metadata.
+- `caja_productos`: N:M relation between boxes and chocolates.
+- `pedidos`: order metadata (destinatario, entrega, envio).
+- `pedido_items`: items in an order (products or boxes).
 
 ## Critical Rules for All Agents
 
-1. **No frameworks CSS** — vanilla CSS/SCSS únicamente.
-2. **Pruebas con Jest** — cobertura mínima 70%.
-3. **Manejo de errores** — mostrar mensajes visuales al usuario.
-4. **No implementation without a spec.** — leer `.github/specs/` primero.
-5. **Clean Code + SOLID** — separación de responsabilidades.
-6. **Responsive design** — diseño adaptable a mobile/desktop.
+1. **Vanilla Only**: No Angular, No React, No Vue, No TypeScript. Pure JS/HTML/CSS.
+2. **Offline Only (SQLite)**: No localStorage, No sessionStorage, No Backend API.
+3. **DB Isolation**: SQL queries ONLY in `db.js`.
+4. **Capacitor Commands**:
+   - Sync: `npx cap sync`
+   - Run: `npx cap run android`
+5. **No implementation without a spec**: Read `.github/specs/` first.
+6. **Mobile First**: Design for Android interface.
 
 ---
-> Last update: 2026-05-10 - Stack adaptado para Prueba Técnica Frontend Angular.
+> Last update: 2026-05-11 - Stack adaptado para App de Chocolates.

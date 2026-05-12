@@ -1,175 +1,68 @@
-# Banking API — Microservicios
+# App de Chocolates — Capacitor & Vanilla JS
 
-Sistema bancario con dos microservicios para gestión de clientes, cuentas y movimientos.
+Aplicación móvil nativa para la gestión de productos, cajas y pedidos de chocolates.
 
----
+## Stack Tecnológico
 
-## ¿Qué necesitás para correrlo?
-
-- Docker instalado y corriendo
-- Nada más.
-
----
-
-## Cómo levantar el proyecto
-
-```bash
-git clone <URL_DEL_REPOSITORIO>
-cd ejercicio-tecnico-backend-2
-docker compose up --build
-```
-
-La primera vez tarda unos minutos. Cuando veas que ambos servicios arrancan sin errores, el sistema está listo.
+- **UI**: HTML5 + CSS3 + JavaScript vanilla (sin frameworks).
+- **Core**: Capacitor v6.
+- **Base de Datos**: SQLite nativo via `@capacitor-community/sqlite`.
+- **Arquitectura**: Single Page Application (SPA).
 
 ---
 
-## URLs disponibles
-
-| Servicio | URL |
-|---|---|
-| API Clientes | http://localhost:8081 |
-| API Cuentas y Movimientos | http://localhost:8082 |
-| RabbitMQ (panel web) | http://localhost:15672 (usuario: `guest`, contraseña: `guest`) |
-
----
-
-## Cómo probar los endpoints
-
-Importá el archivo `Banking_API_Consolidada.postman_collection.json` en Postman.
-
-Antes de correr los requests, creá un **entorno** en Postman con estas dos variables:
-
-| Variable | Valor |
-|---|---|
-| `baseUrlClientes` | `http://localhost:8081` |
-| `baseUrlCuentas` | `http://localhost:8082` |
-
-La colección ya tiene todos los requests ordenados en un flujo lógico: primero creás clientes, luego cuentas, después movimientos, y por último consultás reportes.
-
----
-
-## Endpoints disponibles
-
-### Clientes — `http://localhost:8081`
+## Estructura de Carpetas
 
 ```
-GET    /clientes           → lista todos
-GET    /clientes/{id}      → trae uno por ID
-POST   /clientes           → crea uno
-PUT    /clientes/{id}      → actualiza
-DELETE /clientes/{id}      → elimina
-```
-
-**Crear cliente:**
-```json
-POST /clientes
-{
-  "nombre": "Jose Lema",
-  "genero": "Masculino",
-  "edad": 35,
-  "identificacion": "1234567890",
-  "direccion": "Otavalo sn y principal",
-  "telefono": "098254785",
-  "contrasena": "1234",
-  "estado": true
-}
+proyecto/
+├── www/                  ← Código fuente web
+│   ├── index.html        ← Punto de entrada único
+│   ├── css/              ← Estilos CSS3
+│   ├── js/               ← Lógica JS modularized
+│   │   ├── db.js         ← Queries SQLite (Aislado)
+│   │   └── router.js     ← Navegación SPA
+│   └── views/            ← Fragmentos HTML de las pantallas
+├── android/              ← Proyecto nativo Android
+├── package.json
+└── capacitor.config.json
 ```
 
 ---
 
-### Cuentas — `http://localhost:8082`
+## Reglas del Proyecto
 
-```
-GET    /cuentas            → lista todas
-GET    /cuentas/{id}       → trae una por ID
-POST   /cuentas            → crea una
-PUT    /cuentas/{id}       → actualiza
-DELETE /cuentas/{id}       → elimina
-```
-
-**Crear cuenta:**
-```json
-POST /cuentas
-{
-  "numeroCuenta": "478758",
-  "tipoCuenta": "Ahorros",
-  "saldoInicial": 2000,
-  "estado": true,
-  "clienteId": 1
-}
-```
+1. **Sin Frameworks**: No React, Vue, Angular ni Tailwind.
+2. **Sin Backend**: Persistencia 100% offline via SQLite.
+3. **SQLite Centralizado**: Toda query SQL debe estar en `www/js/db.js`.
+4. **Offline first**: No se permiten llamadas HTTP externas.
+5. **Vanilla JS**: Código limpio, JS moderno pero sin transpiladores ni TypeScript.
 
 ---
 
-### Movimientos — `http://localhost:8082`
+## Cómo Ejecutar
 
-```
-GET    /movimientos        → lista todos
-POST   /movimientos        → registra uno nuevo
-```
-
-**Registrar un retiro** (valor negativo):
-```json
-POST /movimientos
-{
-  "numeroCuenta": "478758",
-  "valor": -575
-}
-```
-
-**Registrar un depósito** (valor positivo):
-```json
-POST /movimientos
-{
-  "numeroCuenta": "478758",
-  "valor": 600
-}
-```
-
-Si no hay saldo suficiente para el retiro, el sistema responde:
-```json
-HTTP 400
-{ "message": "Saldo no disponible" }
-```
+1. **Instalar dependencias**:
+   ```bash
+   npm install
+   ```
+2. **Sincronizar Capacitor**:
+   ```bash
+   npx cap sync
+   ```
+3. **Ejecutar en Android**:
+   ```bash
+   npx cap run android
+   ```
 
 ---
 
-### Reportes — `http://localhost:8082`
+## Flujo de Desarrollo (ASDD)
 
-```
-GET /reportes?fecha=YYYY-MM-DD,YYYY-MM-DD&cliente={id}
-```
-
-**Ejemplo:**
-```
-GET /reportes?fecha=2024-01-01,2024-12-31&cliente=1
-```
-
-**Respuesta:**
-```json
-[
-  {
-    "fecha": "10/02/2024",
-    "cliente": "Marianela Montalvo",
-    "numeroCuenta": "225487",
-    "tipo": "Corriente",
-    "saldoInicial": 100,
-    "estado": true,
-    "movimiento": 600,
-    "saldoDisponible": 700
-  }
-]
-```
+Este proyecto sigue el flujo de agentes **ASDD**:
+1. **Spec Generator**: Define el feature en `.github/specs/`.
+2. **Database Agent**: Implementa SQL en `db.js`.
+3. **Frontend Developer**: Implementa UI y lógica en `www/`.
+4. **QA Agent**: Valida el feature y la persistencia.
 
 ---
-
-## Cómo bajar el proyecto
-
-```bash
-docker compose down
-```
-
-Para borrar también los datos de la base:
-```bash
-docker compose down -v
-```
+> Last update: 2026-05-11
