@@ -63,13 +63,27 @@ async function initProductForm() {
 
     if (btnDelete) {
         btnDelete.addEventListener('click', async () => {
-            if (!confirm("¿Seguro que quieres eliminar este producto?")) return;
             try {
+                // 1. Validar si es eliminable (si no está en cajas o pedidos pendientes)
                 const check = await db.esProductoEliminable(editId);
                 if (!check.ok) {
                     alert(check.msg);
                     return;
                 }
+
+                // 2. Verificar Stock para advertencia
+                const stock = await db.obtenerStockDeProducto(editId);
+                
+                if (stock > 0) {
+                    const confirm1 = confirm(`⚠️ ADVERTENCIA: Este producto tiene ${stock} unidades en stock.\n\nSi lo eliminas, se perderá todo el historial de producción y existencias.\n\n¿Estás SEGURO de querer eliminarlo?`);
+                    if (!confirm1) return;
+
+                    const confirm2 = confirm("⚠️ ÚLTIMA CONFIRMACIÓN:\n¿Realmente deseas borrar este producto y TODO su stock del sistema? Esta acción no se puede deshacer.");
+                    if (!confirm2) return;
+                } else {
+                    if (!confirm("¿Seguro que quieres eliminar este producto?")) return;
+                }
+
                 await db.eliminarProducto(editId);
                 window.location.hash = 'productos';
             } catch (e) {

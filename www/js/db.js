@@ -4,7 +4,7 @@ import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite';
 let sqlite = null;
 let db = null;
 let isInitializing = false;
-const DB_NAME = 'choco_db_v6'; // v6: Persistencia de nombres en historial
+const DB_NAME = 'choco_db_v7'; // v7: Auto-limpieza de stock al borrar producto
 
 /**
  * Espera hasta que la base de datos esté lista.
@@ -102,7 +102,7 @@ export async function initDB() {
                 cantidad INTEGER NOT NULL,
                 fecha TEXT DEFAULT CURRENT_TIMESTAMP,
                 notas TEXT,
-                FOREIGN KEY (producto_id) REFERENCES productos(id)
+                FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
             );
         `;
 
@@ -138,7 +138,7 @@ export async function actualizarProducto(id, p) {
     return await db.run(sql, params);
 }
 
-async function obtenerStockDeProducto(productoId) {
+export async function obtenerStockDeProducto(productoId) {
     const res = await db.query('SELECT SUM(cantidad) as stock FROM registros_produccion WHERE producto_id = ?', [productoId]);
     return res.values[0].stock || 0;
 }
