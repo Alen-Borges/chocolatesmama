@@ -4,7 +4,7 @@ import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite';
 let sqlite = null;
 let db = null;
 let isInitializing = false;
-const DB_NAME = 'choco_db_v4'; // Nueva versión para limpieza total
+const DB_NAME = 'choco_db_v6'; // v6: Persistencia de nombres en historial
 
 /**
  * Espera hasta que la base de datos esté lista.
@@ -89,11 +89,12 @@ export async function initDB() {
                 tipo_item TEXT,
                 producto_id INTEGER,
                 caja_id INTEGER,
+                nombre TEXT, -- Nombre estático para el historial
                 cantidad INTEGER NOT NULL,
                 precio_unitario REAL NOT NULL,
                 FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
-                FOREIGN KEY (producto_id) REFERENCES productos(id),
-                FOREIGN KEY (caja_id) REFERENCES cajas(id)
+                FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE SET NULL,
+                FOREIGN KEY (caja_id) REFERENCES cajas(id) ON DELETE SET NULL
             );
             CREATE TABLE IF NOT EXISTS registros_produccion (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -137,6 +138,11 @@ export async function actualizarProducto(id, p) {
     return await db.run(sql, params);
 }
 
+async function obtenerStockDeProducto(productoId) {
+    const res = await db.query('SELECT SUM(cantidad) as stock FROM registros_produccion WHERE producto_id = ?', [productoId]);
+    return res.values[0].stock || 0;
+}
+
 export async function eliminarProducto(id) {
     await ensureDbReady();
     return await db.run('DELETE FROM productos WHERE id=?', [id]);
@@ -144,10 +150,27 @@ export async function eliminarProducto(id) {
 
 export async function esProductoEliminable(id) {
     await ensureDbReady();
+    
+    // 1. ¿Está en alguna caja? (Si está en una caja, no se puede borrar el producto base)
     const resBox = await db.query('SELECT COUNT(*) as count FROM caja_productos WHERE producto_id = ?', [id]);
-    if (resBox.values[0].count > 0) return false;
-    const resOrders = await db.query(`SELECT COUNT(*) as count FROM pedido_items pi JOIN pedidos p ON pi.pedido_id = p.id WHERE pi.producto_id = ? AND p.estado = 'pendiente'`, [id]);
-    return resOrders.values[0].count === 0;
+    if (resBox.values[0].count > 0) return { ok: false, msg: "Este producto es parte de una o más Cajas existentes." };
+    
+    // 2. ¿Está en algún pedido pendiente?
+    const resOrders = await db.query(`
+        SELECT COUNT(*) as count 
+        FROM pedido_items pi 
+        JOIN pedidos p ON pi.pedido_id = p.id 
+        WHERE pi.producto_id = ? AND p.estado = 'pendiente'`, [id]);
+        
+    if (resOrders.values[0].count > 0) return { ok: false, msg: "Este producto está en un pedido PENDIENTE actual." };
+    
+    return { ok: true };
+}
+
+export async function obtenerProductoPorId(id) {
+    await ensureDbReady();
+    const res = await db.query('SELECT * FROM productos WHERE id = ?', [id]);
+    return res.values[0] || null;
 }
 
 export async function obtenerCajas() {
@@ -163,6 +186,31 @@ export async function obtenerContenidoCaja(cajaId) {
     return res.values || [];
 }
 
+export async function obtenerCajaPorId(id) {
+    await ensureDbReady();
+    const res = await db.query('SELECT * FROM cajas WHERE id = ?', [id]);
+    return res.values[0] || null;
+}
+
+export async function esCajaEliminable(id) {
+    await ensureDbReady();
+    // ¿Está en algún pedido pendiente?
+    const resOrders = await db.query(`
+        SELECT COUNT(*) as count 
+        FROM pedido_items pi 
+        JOIN pedidos p ON pi.pedido_id = p.id 
+        WHERE pi.caja_id = ? AND p.estado = 'pendiente'`, [id]);
+        
+    if (resOrders.values[0].count > 0) return { ok: false, msg: "Esta caja está en un pedido PENDIENTE actual." };
+    
+    return { ok: true };
+}
+
+export async function eliminarCaja(id) {
+    await ensureDbReady();
+    return await db.run('DELETE FROM cajas WHERE id = ?', [id]);
+}
+
 export async function crearCaja(caja, items) {
     await ensureDbReady();
     const res = await db.run(`INSERT INTO cajas (nombre, empaque, precio_total, descripcion) VALUES (?, ?, ?, ?)`, [caja.nombre, caja.empaque, caja.precio_total, caja.descripcion]);
@@ -173,11 +221,58 @@ export async function crearCaja(caja, items) {
     return newId;
 }
 
+export async function actualizarCaja(id, caja, items) {
+    await ensureDbReady();
+    // 1. Actualizar datos base
+    await db.run(`UPDATE cajas SET nombre=?, empaque=?, precio_total=?, descripcion=? WHERE id=?`, [caja.nombre, caja.empaque, caja.precio_total, caja.descripcion, id]);
+    
+    // 2. Limpiar items antiguos
+    await db.run('DELETE FROM caja_productos WHERE caja_id = ?', [id]);
+    
+    // 3. Insertar nuevos items
+    for (const item of items) {
+        await db.run('INSERT INTO caja_productos (caja_id, producto_id, cantidad) VALUES (?, ?, ?)', [id, item.producto_id, item.cantidad]);
+    }
+    return true;
+}
+
 export async function obtenerPedidosPendientes() {
     await ensureDbReady();
     const sql = `SELECT p.*, COALESCE((SELECT SUM(pi.cantidad * pi.precio_unitario) FROM pedido_items pi WHERE pi.pedido_id = p.id), 0) + p.costo_envio as total_acumulado FROM pedidos p WHERE p.estado = 'pendiente' ORDER BY p.fecha_entrega ASC`;
     const res = await db.query(sql);
-    return res.values || [];
+    const pedidos = res.values || [];
+
+    // Pre-cargar stocks para optimizar
+    const resStock = await db.query('SELECT producto_id, SUM(cantidad) as total FROM registros_produccion GROUP BY producto_id');
+    const stocks = {};
+    (resStock.values || []).forEach(s => stocks[s.producto_id] = s.total || 0);
+
+    // Verificar cada pedido
+    for (const p of pedidos) {
+        const detalle = await obtenerDetallePedido(p.id);
+        const necesidades = {};
+        for (const item of detalle.items) {
+            if (item.tipo_item === 'producto') {
+                necesidades[item.producto_id] = (necesidades[item.producto_id] || 0) + item.cantidad;
+            } else if (item.tipo_item === 'caja') {
+                const componentes = await obtenerContenidoCaja(item.caja_id);
+                for (const comp of componentes) {
+                    necesidades[comp.producto_id] = (necesidades[comp.producto_id] || 0) + (comp.cantidad * item.cantidad);
+                }
+            }
+        }
+
+        let listo = true;
+        for (const pid in necesidades) {
+            if ((stocks[pid] || 0) < necesidades[pid]) {
+                listo = false;
+                break;
+            }
+        }
+        p.stock_listo = listo;
+    }
+
+    return pedidos;
 }
 
 export async function obtenerHistorialPedidos() {
@@ -196,7 +291,8 @@ export async function obtenerDetallePedido(id) {
     await ensureDbReady();
     const resP = await db.query("SELECT * FROM pedidos WHERE id = ?", [id]);
     const pedido = resP.values[0];
-    const resI = await db.query(`SELECT pi.*, COALESCE(p.nombre, c.nombre) as nombre_item FROM pedido_items pi LEFT JOIN productos p ON pi.producto_id = p.id LEFT JOIN cajas c ON pi.caja_id = c.id WHERE pi.pedido_id = ?`, [id]);
+    // Usamos pi.nombre como fuente principal del nombre
+    const resI = await db.query(`SELECT pi.*, pi.nombre as nombre_item FROM pedido_items pi WHERE pi.pedido_id = ?`, [id]);
     return { ...pedido, items: resI.values || [] };
 }
 
@@ -208,33 +304,59 @@ export async function crearPedido(pedido, items) {
     const newId = res.changes.lastId;
     
     for (const item of items) {
-        await db.run(`INSERT INTO pedido_items (pedido_id, tipo_item, producto_id, caja_id, cantidad, precio_unitario) VALUES (?, ?, ?, ?, ?, ?)`, [newId, item.tipo_item, item.producto_id || null, item.caja_id || null, item.cantidad, item.precio_unitario]);
-    }
+        // Obtener el nombre actual para guardarlo de forma estática
+        let nombreEstatico = "Item eliminado";
+        if (item.tipo_item === 'producto') {
+            const p = await obtenerProductoPorId(item.producto_id);
+            if (p) nombreEstatico = p.nombre;
+        } else {
+            const c = await obtenerCajaPorId(item.caja_id);
+            if (c) nombreEstatico = c.nombre;
+        }
 
-    // Lógica de los 20 pedidos: Borrar el más antiguo si superamos el límite
-    // Nota: El trigger ON DELETE CASCADE en el esquema asegura que se borren sus items
-    await db.run(`
-        DELETE FROM pedidos 
-        WHERE id NOT IN (
-            SELECT id FROM pedidos 
-            ORDER BY created_at DESC 
-            LIMIT 20
-        )
-    `);
+        await db.run(`INSERT INTO pedido_items (pedido_id, tipo_item, producto_id, caja_id, nombre, cantidad, precio_unitario) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+            [newId, item.tipo_item, item.producto_id || null, item.caja_id || null, nombreEstatico, item.cantidad, item.precio_unitario]);
+    }
 
     return newId;
 }
 
 export async function marcarComoEntregado(id) {
-    // 1. Obtener los ítems del pedido para saber qué descontar del stock
     const pedido = await obtenerDetallePedido(id);
-    
-    // 2. Registrar la "salida" de stock
+    const errores = [];
+    const stockNecesario = {};
+
+    // 1. Mapear necesidades totales del pedido
+    for (const item of pedido.items) {
+        if (item.tipo_item === 'producto') {
+            stockNecesario[item.producto_id] = (stockNecesario[item.producto_id] || 0) + item.cantidad;
+        } else if (item.tipo_item === 'caja') {
+            const componentes = await obtenerContenidoCaja(item.caja_id);
+            for (const comp of componentes) {
+                stockNecesario[comp.producto_id] = (stockNecesario[comp.producto_id] || 0) + (comp.cantidad * item.cantidad);
+            }
+        }
+    }
+
+    // 2. Validar contra stock real
+    for (const prodId in stockNecesario) {
+        const stock = await obtenerStockDeProducto(prodId);
+        if (stock < stockNecesario[prodId]) {
+            // Obtener nombre del producto para el error
+            const p = await obtenerProductoPorId(prodId);
+            errores.push(`[${p.nombre}]: Tienes ${stock} y necesitas ${stockNecesario[prodId]}`);
+        }
+    }
+
+    if (errores.length > 0) {
+        throw new Error("⚠️ STOCK INSUFICIENTE:\n" + errores.join('\n'));
+    }
+
+    // 3. Registrar salidas de stock
     for (const item of pedido.items) {
         if (item.tipo_item === 'producto') {
             await registrarProduccion(item.producto_id, -item.cantidad, `Entrega Pedido #${id}`);
         } else if (item.tipo_item === 'caja') {
-            // Si es caja, hay que descontar sus componentes
             const componentes = await obtenerContenidoCaja(item.caja_id);
             for (const comp of componentes) {
                 await registrarProduccion(comp.producto_id, -(comp.cantidad * item.cantidad), `Entrega Pedido #${id} (Caja)`);
@@ -242,13 +364,39 @@ export async function marcarComoEntregado(id) {
         }
     }
 
-    // 3. Cambiar estado
-    return await db.run("UPDATE pedidos SET estado = 'entregado' WHERE id = ?", [id]);
+    // 4. Cambiar estado y limpiar historial
+    await db.run("UPDATE pedidos SET estado = 'entregado' WHERE id = ?", [id]);
+
+    // 4. Limpiar Historial (solo mantener los últimos 20 no-pendientes)
+    await db.run(`
+        DELETE FROM pedidos 
+        WHERE estado IN ('entregado', 'cancelado') 
+        AND id NOT IN (
+            SELECT id FROM pedidos 
+            WHERE estado IN ('entregado', 'cancelado') 
+            ORDER BY created_at DESC 
+            LIMIT 20
+        )
+    `);
+    return true;
 }
 
 export async function cancelarPedido(id) {
     await ensureDbReady();
-    return await db.run("UPDATE pedidos SET estado = 'cancelado' WHERE id = ?", [id]);
+    await db.run("UPDATE pedidos SET estado = 'cancelado' WHERE id = ?", [id]);
+    
+    // Limpiar Historial
+    await db.run(`
+        DELETE FROM pedidos 
+        WHERE estado IN ('entregado', 'cancelado') 
+        AND id NOT IN (
+            SELECT id FROM pedidos 
+            WHERE estado IN ('entregado', 'cancelado') 
+            ORDER BY created_at DESC 
+            LIMIT 20
+        )
+    `);
+    return true;
 }
 
 export async function obtenerConsolidadoProduccion() {
@@ -268,11 +416,12 @@ export async function obtenerConsolidadoProduccion() {
     FROM productos p`;
     
     const res = await db.query(sql);
-    return (res.values || []).map(v => ({
-        ...v,
-        // La deuda es la demanda que el stock NO puede cubrir
-        deuda: Math.max(0, v.demanda_pendiente - v.stock_actual)
-    }));
+    return (res.values || [])
+        .map(v => ({
+            ...v,
+            deuda: Math.max(0, v.demanda_pendiente - v.stock_actual)
+        }))
+        .filter(v => v.stock_actual > 0 || v.demanda_pendiente > 0 || v.deuda > 0);
 }
 
 export async function registrarProduccion(productoId, cantidad, notas = '') {

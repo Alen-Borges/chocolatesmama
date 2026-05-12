@@ -15,8 +15,12 @@ window.switchOrderTab = (tab) => {
 
 window.marcarEntregadoUI = async (id) => {
     if (confirm("¿Marcar este pedido como ENTREGADO?")) {
-        await db.marcarComoEntregado(id);
-        renderOrders();
+        try {
+            await db.marcarComoEntregado(id);
+            renderOrders();
+        } catch (e) {
+            alert(e.message);
+        }
     }
 };
 
@@ -69,6 +73,7 @@ async function renderOrders() {
                 </div>
                 <div class="order-footer">
                     <span class="order-status badge-${order.estado}">${order.estado}</span>
+                    ${order.stock_listo && order.estado === 'pendiente' ? '<span class="badge-ready">✅ Materiales listos</span>' : ''}
                     ${order.con_envio ? `<span class="shipping-tag">🚚 $${order.costo_envio}</span>` : ''}
                 </div>
                 
